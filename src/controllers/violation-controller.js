@@ -1,5 +1,5 @@
-const express = require("express");
 const Violation = require("../models/violation");
+const violationID = "ID отказа";
 
 const handleError = (res, error) => {
   res.status(500).json({ error });
@@ -24,26 +24,27 @@ const addViolation = (req, res) => {
 };
 
 const addBulkOfViolations = (req, res) => {
-  const bulk = req.body;
-  console.log(bulk);
-  Violation.find()
-    .forEach(function (p) {
-      // bulk.forEach((el) => {
-      //   if (el["ID отказа"] === p["ID отказа"])
-      //     return (p = Object.assign({}, el));
-      // });
-      return p;
-    })
-    .toArray()
-    .save()
+  Violation.insertMany(req.body)
     .then((result) => {
+      console.log(result);
+
       res.status(201).json(result);
     })
     .catch((err) => handleError(res, err));
 
-  bulk.forEach((element) => {
-    Violation.findOneAndReplace({ "ID отказа": element.id }, element);
-  });
+  // Violation.find({}, { violationID: 1 })
+  //   .sort({ _id: 1 })
+  // .forEach(function (doc) {
+  //   Violation.remove({
+  //     _id: { $gt: doc._id },
+  //     violationID: doc.violationID,
+  //   });
+  // })
+  // .then((result) => {
+
+  //   res.status(201).json(result);
+  // })
+  // .catch((err) => handleError(res, err));
 };
 
 const deleteViolations = (req, res) => {

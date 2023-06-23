@@ -14,6 +14,6 @@ router.post("/violations", addViolation);
 router.delete("/violations", deleteViolations);
 router.patch("/violations/:id", updateViolation);
 
-router.patch("/add-bulk-of-violations", addBulkOfViolations);
+router.post("/add-bulk-of-violations", addBulkOfViolations);
 
 module.exports = router;

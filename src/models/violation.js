@@ -2,27 +2,27 @@ const mongoose = require("mongoose");
 const violationScheme = new mongoose.Schema({
   "ID отказа": {
     type: Number,
-    required: true,
+    required: false,
   },
   "Начало отказа": {
     type: String,
-    required: true,
+    required: false,
   },
   "Категория отказа": {
     type: String,
-    required: true,
+    required: false,
   },
   "Вид технологического нарушения": {
     type: String,
-    required: true,
+    required: false,
   },
   "Виновное предприятие": {
     type: String,
-    required: true,
+    required: false,
   },
   "Причина 2 ур": {
     type: String,
-    required: true,
+    required: false,
   },
   "Количество грузовых поездов(по месту)": {
     type: Number,
