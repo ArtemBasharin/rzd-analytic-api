@@ -24,27 +24,32 @@ const addViolation = (req, res) => {
 };
 
 const addBulkOfViolations = (req, res) => {
-  Violation.insertMany(req.body)
+  let updates = 0;
+  let inserts = 0;
+  Violation.find()
+    .then((violations) => {
+      let ids = [];
+      violations.forEach((el) => ids.push(el[violationID]));
+      req.body.forEach((el_bulk) => {
+        if (ids.includes(el_bulk[violationID])) {
+          Violation.updateOne({ violationID: el_bulk[violationID] }, [
+            { $set: { el_bulk } },
+          ]);
+          updates += 1;
+          console.log("updated for", el_bulk[violationID]);
+        } else {
+          const violation = new Violation(el_bulk);
+          violation.save();
+          inserts += 1;
+          console.log("inserted for", el_bulk[violationID]);
+        }
+      });
+    })
     .then((result) => {
-      console.log(result);
-
+      res.send(updates + " updated, " + inserts + " inserted");
       res.status(201).json(result);
     })
     .catch((err) => handleError(res, err));
-
-  // Violation.find({}, { violationID: 1 })
-  //   .sort({ _id: 1 })
-  // .forEach(function (doc) {
-  //   Violation.remove({
-  //     _id: { $gt: doc._id },
-  //     violationID: doc.violationID,
-  //   });
-  // })
-  // .then((result) => {
-
-  //   res.status(201).json(result);
-  // })
-  // .catch((err) => handleError(res, err));
 };
 
 const deleteViolations = (req, res) => {
