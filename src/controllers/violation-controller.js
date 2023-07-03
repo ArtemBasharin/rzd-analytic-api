@@ -24,21 +24,55 @@ const addViolation = (req, res) => {
     .catch((err) => handleError(res, err));
 };
 
+// const removeDups = (req, res) => {
+//   let violations = [];
+//   Violation.find().then((res) => (violations = res));
+//   let promises = violations.map(function (doc) {
+//     console.log(typeof doc["ID отказа"]);
+//     Violation.deleteMany({
+//       "ID отказа": 97,
+//     });
+//   });
+//   Promise.all(promises).then((result) => {
+//     res.status(201).json(result);
+//   });
+// };
+
 const removeDups = (req, res) => {
-  let violations = [];
-  Violation.find().then((res) => (violations = res));
-  let promises = violations.map(function (doc) {
-    console.log(typeof doc["ID отказа"]);
-    Violation.deleteMany({
-      "ID отказа": 97,
-    });
-  });
-  Promise.all(promises).then((result) => {
-    res.status(201).json(result);
-  });
+  Violation.find()
+    .then((violations) => {
+      violations.forEach(function (doc) {
+        Violation.deleteMany({
+          "ID отказа": doc["ID отказа"],
+          _id: { $lt: doc._id },
+        })
+          // .then((res) => console.log(res))
+          .catch((err) => handleError(res, err));
+      });
+    })
+    // .then((result) => {
+    //   res.status(200).json(result);
+    // })
+    .catch((err) => handleError(res, err));
 };
 
 const addBulkOfViolations = (req, res) => {
+  Violation.find()
+    .then((violations) => {
+      violations.forEach(function (doc) {
+        Violation.deleteMany({
+          "ID отказа": doc["ID отказа"],
+          _id: { $lt: doc._id },
+        })
+          .then((res) => console.log(res))
+          .catch((err) => handleError(res, err));
+      });
+    })
+    // .then((result) => {
+    //   res.status(200).json(result);
+    // })
+    .catch((err) => handleError(res, err));
+
   let promises = req.body.map(function (el) {
     return Violation.replaceOne(
       { "ID отказа": el["ID отказа"] },
