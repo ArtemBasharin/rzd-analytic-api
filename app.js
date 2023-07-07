@@ -18,17 +18,20 @@ mongoose
 
   .catch((err) => console.log(`DB connection error: ${err}`));
 
-app.use(
-  cors({
-    origin: "*",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "*",
-    "Access-Control-Allow-Headers":
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-    credentials: true,
-    optionSuccessStatus: 200,
-  })
-);
+// app.use(
+//   cors({
+//     origin: "*",
+//     headers: {
+//       "Access-Control-Allow-Origin": "*",
+//       "Access-Control-Allow-Methods": "*",
+//       "Access-Control-Allow-Headers": "*",
+//     },
+//     credentials: true,
+//     optionSuccessStatus: 200,
+//   })
+// );
+
+app.use(cors());
 
 app.listen(PORT, (err) =>
   err ? console.log(err) : console.log(`Listening port ${PORT}`)
