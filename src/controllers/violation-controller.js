@@ -7,8 +7,26 @@ const handleError = (res, error) => {
 };
 
 const getViolations = (req, res) => {
-  Violation.find()
+  // res.setHeader("Access-Control-Allow-Origin", "*");
+  // res.setHeader("Access-Control-Allow-Credentials", "true");
+  // res.setHeader("Access-Control-Max-Age", "1800");
+  // res.setHeader("Access-Control-Allow-Headers", "content-type");
+  console.log("req.query:", req.query);
+  let minY = req.query.fromYear + "-01-01";
+  let maxY = req.query.toYear + "-12-31";
+  console.log(minY);
+  console.log(new Date("2022-01-01"));
+
+  Violation.find({
+    $and: [
+      {
+        "Начало отказа": { $gte: new Date(minY) },
+      },
+      { "Начало отказа": { $lte: new Date(maxY) } },
+    ],
+  })
     .then((violations) => {
+      console.log(violations);
       res.status(200).json(violations);
     })
     .catch((err) => handleError(res, err));
@@ -57,6 +75,13 @@ const removeDups = (req, res) => {
 };
 
 const addBulkOfViolations = (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "1800");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
   Violation.find()
     .then((violations) => {
       violations.forEach(function (doc) {

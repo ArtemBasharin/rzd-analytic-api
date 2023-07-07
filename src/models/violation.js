@@ -5,7 +5,7 @@ const violationScheme = new mongoose.Schema({
     required: false,
   },
   "Начало отказа": {
-    type: String,
+    type: Date,
     required: false,
   },
   "Категория отказа": {
