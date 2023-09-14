@@ -93,6 +93,10 @@ const addBulkOfViolations = (req, res) => {
 
   if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
     promises = req.body.map(function (el) {
+      if (!el["Причина 2 ур"])
+        el[
+          "Причина 2 ур"
+        ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
       return Violations.replaceOne(
         { "ID отказа": el["ID отказа"] },
         {
