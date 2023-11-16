@@ -20,6 +20,10 @@ const violationScheme = new mongoose.Schema({
     type: String,
     required: false,
   },
+  "Место":{
+    type: String,
+    required: false,
+  },
   "Причина 2 ур": {
     type: String,
     required: false,
