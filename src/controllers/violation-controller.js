@@ -68,7 +68,7 @@ const addBulkOfViolations = (req, res) => {
           "ID отказа": doc["ID отказа"],
           _id: { $lt: doc._id },
         })
-          .then((res) => console.log(res))
+          // .then((res) => console.log(res)) // проверить, без этой строки весь промис не работает
           .catch((err) => handleError(res, err));
       });
     })
@@ -77,27 +77,58 @@ const addBulkOfViolations = (req, res) => {
     // })
     .catch((err) => handleError(res, err));
 
+  // let emptyReasonIds = Violations.find({
+  //   "Причина 2 ур": { $exists: false },
+  // }).then((res) => {
+  //   // console.log("res", res);
+  //   // console.log(Array.from(res.map((el) => el["ID отказа"])));
+  //   return Array.from(res.map((el) => el["ID отказа"]));
+  //   // console.log("req.body[0]", req.body[0]);
+  // });
+
   let promises = [];
   if (Object.keys(req.body[0]).includes("Ответственный")) {
-    console.log(req.body[0]);
+    // console.log("emptyReasonId in promises", emptyReasonIds);
     promises = req.body.map(function (el) {
+      // console.log(emptyReasonIds.includes(el["#"]));
       return Violations.updateOne(
         { "ID отказа": el["#"] },
-        {
-          "Виновное предприятие": el["Ответственный"].trim(),
-          "Место": el["Место"].trim(),
-        },
+        [
+          {
+            $set: {
+              "Виновное предприятие": el["Ответственный"].trim(),
+              "Место": el["Место"].trim(),
+            },
+          },
+        ],
         { upsert: false }
       );
     });
   }
 
+  // if (Object.keys(req.body[0]).includes("Ответственный")) {
+  //   // console.log("emptyReasonId in promises", emptyReasonIds);
+  //   promises = req.body.map(function (el) {
+  //     // console.log(emptyReasonIds.includes(el["#"]));
+  //     Violations.updateOne(
+  //       { "ID отказа": el["#"], "Причина 2 ур": { $ne: "" } },
+  //       {
+  //         $set: {
+  //           "Виновное предприятие": el["Ответственный"].trim(),
+  //           "Место": el["Место"].trim(),
+  //         },
+  //       },
+  //       { upsert: false }
+  //     );
+  //   });
+  // }
+
   if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
     promises = req.body.map(function (el) {
-      if (!el["Причина 2 ур"])
-        el[
-          "Причина 2 ур"
-        ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
+      // if (!el["Причина 2 ур"])
+      //   el[
+      //     "Причина 2 ур"
+      //   ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
       return Violations.replaceOne(
         { "ID отказа": el["ID отказа"] },
         {
@@ -135,17 +166,47 @@ const addBulkOfViolations = (req, res) => {
     });
   }
 
-  Promise.all(promises).then((result) => {
-    res.status(201).json(result[0]);
+  Promise.all(promises).then((results) => {
+    console.log("results", results);
+    // Все ответы res помещаются в массив
+    // const allResponses = results.map((result) => result.body); // предположим, что результат представлен в формате { body: результат }
+    let acc0 = { ...results[0] };
+    Object.keys(acc0).forEach((key) => {
+      acc0[key] = 0;
+    });
+    // console.log("acc0", acc0);
+    // Применение функции accumulatedRes к массиву allResponses
+    let accumulatedRes = results.reduce((acc, curr) => {
+      for (key in curr) {
+        if (curr[key] > 0) acc[key]++;
+        else if (curr[key] === null) acc[key];
+        else if (curr[key]) acc[key]++;
+      }
+      // console.log(acc);
+      return acc;
+    }, acc0);
+    // console.log("accumulatedRes", accumulatedRes);
+
+    // Передача результата в теле ответа сервера в формате JSON
+    res.status(201).json(accumulatedRes);
   });
 };
 
 const deleteViolations = (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "7200");
+  res.setHeader("Access-Control-Allow-Headers", "content-type");
   Violations.deleteMany()
     .then((result) => {
       res.status(200).json(result);
     })
-    .catch((err) => handleError(res, err));
+    .catch((err) => {
+      handleError(res, err);
+      res
+        .status(500)
+        .json({ error: "An error occurred while deleting violations" });
+    });
 };
 
 const updateViolation = (req, res) => {

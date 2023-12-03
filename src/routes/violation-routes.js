@@ -13,7 +13,9 @@ const {
 
 router.get("/violations", getViolations);
 router.post("/violations", addViolation);
+
 router.delete("/violations", deleteViolations);
+
 router.delete("/removedups", removeDups);
 
 router.patch("/violations/:id", updateViolation);
