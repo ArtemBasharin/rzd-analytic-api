@@ -125,10 +125,10 @@ const addBulkOfViolations = (req, res) => {
 
   if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
     promises = req.body.map(function (el) {
-      // if (!el["Причина 2 ур"])
-      //   el[
-      //     "Причина 2 ур"
-      //   ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
+      if (!el["Причина 2 ур"])
+        el[
+          "Причина 2 ур"
+        ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
       return Violations.replaceOne(
         { "ID отказа": el["ID отказа"] },
         {
@@ -194,9 +194,11 @@ const addBulkOfViolations = (req, res) => {
 
 const deleteViolations = (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Max-Age", "7200");
-  res.setHeader("Access-Control-Allow-Headers", "content-type");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
   Violations.deleteMany()
     .then((result) => {
       res.status(200).json(result);

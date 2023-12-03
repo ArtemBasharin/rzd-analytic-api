@@ -14,6 +14,7 @@ const {
 router.get("/violations", getViolations);
 router.post("/violations", addViolation);
 
+router.options("/violations", cors()); // enable pre-flight request
 router.delete("/violations", deleteViolations);
 
 router.delete("/removedups", removeDups);
