@@ -125,10 +125,10 @@ const addBulkOfViolations = (req, res) => {
 
   if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
     promises = req.body.map(function (el) {
-      if (!el["Причина 2 ур"])
-        el[
-          "Причина 2 ур"
-        ] = `Причина не указана. Вина ${el["Виновное предприятие"]} `;
+      if (!el["Причина 2 ур"]) {
+        el["Причина 2 ур"] = el["???????? (???????)"];
+        console.log(el["Причина 2 ур"]);
+      }
       return Violations.replaceOne(
         { "ID отказа": el["ID отказа"] },
         {
@@ -167,7 +167,7 @@ const addBulkOfViolations = (req, res) => {
   }
 
   Promise.all(promises).then((results) => {
-    console.log("results", results);
+    // console.log("results", results);
     // Все ответы res помещаются в массив
     // const allResponses = results.map((result) => result.body); // предположим, что результат представлен в формате { body: результат }
     let acc0 = { ...results[0] };
