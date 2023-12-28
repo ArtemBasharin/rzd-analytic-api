@@ -2,6 +2,18 @@ const ObjectId = require("mongodb");
 const Violations = require("../models/violation");
 const violationID = "ID отказа";
 
+function setDateTimezone(dateString) {
+  if (dateString) {
+    // console.log(dateString);
+
+    let index = dateString.indexOf(".");
+
+    let string = dateString.slice(0, index);
+    // console.log(string + "-03:00");
+    return string + "-03:00";
+  }
+}
+
 const handleError = (res, error) => {
   res.status(500).json({ error });
 };
@@ -24,7 +36,7 @@ const getViolations = (req, res) => {
     ],
   })
     .then((result) => {
-      // console.log(violations);
+      // console.log(result);
       res.status(200).json(result);
     })
     .catch((err) => handleError(res, err));
@@ -127,13 +139,15 @@ const addBulkOfViolations = (req, res) => {
     promises = req.body.map(function (el) {
       if (!el["Причина 2 ур"]) {
         el["Причина 2 ур"] = el["???????? (???????)"];
-        console.log(el["Причина 2 ур"]);
+        // console.log(el["Причина 2 ур"]);
       }
+      console.log(setDateTimezone(el["Начало отказа"]));
       return Violations.replaceOne(
         { "ID отказа": el["ID отказа"] },
         {
           "ID отказа": el["ID отказа"],
-          "Начало отказа": el["Начало отказа"],
+          "Начало отказа": setDateTimezone(el["Начало отказа"]),
+          // "Начало отказа": el["Начало отказа"],
           "Категория отказа": el["Категория отказа"],
           "Вид технологического нарушения":
             el["Вид технологического нарушения"],
