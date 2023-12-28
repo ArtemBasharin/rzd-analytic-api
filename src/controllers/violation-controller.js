@@ -4,10 +4,8 @@ const violationID = "ID отказа";
 
 function setDateTimezone(dateString) {
   if (dateString) {
-    // console.log(dateString);
-
+    console.log(new Date(dateString));
     let index = dateString.indexOf(".");
-
     let string = dateString.slice(0, index);
     // console.log(string + "-03:00");
     return string + "-03:00";
@@ -158,9 +156,17 @@ const addBulkOfViolations = (req, res) => {
         [
           {
             $set: {
-              "Виновное предприятие": el["Ответственный"].trim(),
-              "Начало отказа": setDateTimezone(el["Начало"]),
-              "Место": el["Место"].trim(),
+              "Виновное предприятие": el["Ответственный"]
+                .trim()
+                .replace(/\n/g, " ")
+                .replace(/\s+/g, " "),
+              // "Начало отказа": setDateTimezone(el["Начало"]),
+              "Начало отказа": new Date(el["Начало"]),
+              "Место": el["Место"]
+                .trim()
+                .replace(/\n/g, " ")
+                .replace(/\s+/g, " "),
+              "Причина 2 ур": el["Причина"],
               "Количество грузовых поездов(по месту)": getTrains(
                 el["Грузовой"]
               ),
@@ -238,10 +244,16 @@ const addBulkOfViolations = (req, res) => {
         [
           {
             $set: {
-              "ID отказа": el["ID отказа"],
               "Категория отказа": el["Категория отказа"],
               "Вид технологического нарушения":
                 el["Вид технологического нарушения"],
+              "Причина": {
+                $cond: {
+                  if: { $ne: ["$el['Причина 2 ур']", ""] },
+                  then: el["Причина 2 ур"],
+                  else: "$Причина",
+                },
+              },
             },
           },
         ],
