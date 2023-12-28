@@ -14,6 +14,33 @@ function setDateTimezone(dateString) {
   }
 }
 
+function getTrains(inputString) {
+  const matchParentheses = inputString.match(/шт\s*\(\s*к учету\s*(\d+)\s*\)/);
+  if (matchParentheses && matchParentheses.length > 1) {
+    return parseInt(matchParentheses[1]);
+  } else {
+    const matchNumber = inputString.match(/^\d+/);
+    return matchNumber ? parseInt(matchNumber[0]) : 0;
+  }
+}
+
+function getHours(inputString) {
+  const matchNumberInParentheses = inputString.match(
+    /\((?:\D*(\d+,\d+)\D*)\s*ч\)/
+  );
+  if (matchNumberInParentheses) {
+    const numberWithDot = matchNumberInParentheses[1].replace(",", ".");
+    return parseFloat(numberWithDot) || 0;
+  } else {
+    const matchNumberBeforeCh = inputString.match(/(\d+,\d+)\s*ч/);
+    if (matchNumberBeforeCh) {
+      const numberWithDot = matchNumberBeforeCh[1].replace(",", ".");
+      return parseFloat(numberWithDot) || 0;
+    }
+  }
+  return 0;
+}
+
 const handleError = (res, error) => {
   res.status(500).json({ error });
 };
@@ -99,17 +126,122 @@ const addBulkOfViolations = (req, res) => {
   // });
 
   let promises = [];
+
+  //correct code
+  // if (Object.keys(req.body[0]).includes("Ответственный")) { //common report from new report
+  //   // console.log("emptyReasonId in promises", emptyReasonIds);
+  //   promises = req.body.map(function (el) {
+  //     // console.log(emptyReasonIds.includes(el["#"]));
+  //     return Violations.updateOne(
+  //       { "ID отказа": el["#"] },
+  //       [
+  //         {
+  //           $set: {
+  //             "Виновное предприятие": el["Ответственный"].trim(),
+  //             "Место": el["Место"].trim(),
+  //           },
+  //         },
+  //       ],
+  //       { upsert: false }
+  //     );
+  //   });
+  // }
+
+  //common report from new report
   if (Object.keys(req.body[0]).includes("Ответственный")) {
     // console.log("emptyReasonId in promises", emptyReasonIds);
     promises = req.body.map(function (el) {
       // console.log(emptyReasonIds.includes(el["#"]));
+      el["Начало"];
       return Violations.updateOne(
         { "ID отказа": el["#"] },
         [
           {
             $set: {
               "Виновное предприятие": el["Ответственный"].trim(),
+              "Начало отказа": setDateTimezone(el["Начало"]),
               "Место": el["Место"].trim(),
+              "Количество грузовых поездов(по месту)": getTrains(
+                el["Грузовой"]
+              ),
+              "Время грузовых поездов(по месту)": getHours(el["Грузовой"]),
+              "Количество пассажирских поездов(по месту)": getTrains(
+                el["Пассажирский"]
+              ),
+              "Время пассажирских поездов(по месту)": getHours(
+                el["Пассажирский"]
+              ),
+              "Количество пригородных поездов(по месту)": getTrains(
+                el["Пригородный"]
+              ),
+              "Время пригородных поездов(по месту)": getHours(
+                el["Пригородный"]
+              ),
+            },
+          },
+        ],
+        { upsert: true }
+      );
+    });
+  }
+
+  //old correct code
+
+  // if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
+  //   //common report from report-gen
+  //   promises = req.body.map(function (el) {
+  //     if (!el["Причина 2 ур"]) {
+  //       el["Причина 2 ур"] = el["???????? (???????)"];
+  //     }
+  //     return Violations.replaceOne(
+  //       { "ID отказа": el["ID отказа"] },
+  //       {
+  //         "ID отказа": el["ID отказа"],
+  //         "Начало отказа": setDateTimezone(el["Начало отказа"]),
+  //         "Категория отказа": el["Категория отказа"],
+  //         "Вид технологического нарушения":
+  //           el["Вид технологического нарушения"],
+  //         "Виновное предприятие": el["Виновное предприятие"],
+  //         "Место": el["Перегон"],
+  //         "Причина 2 ур": el["Причина 2 ур"],
+  //         "Количество грузовых поездов(по месту)":
+  //           el["Количество грузовых поездов(по месту)"],
+  //         "Время грузовых поездов(по месту)": Number(
+  //           (Number(el["Время грузовых поездов(по месту)"]) / 60).toFixed(4)
+  //         ),
+  //         "Количество пассажирских поездов(по месту)":
+  //           el["Количество пассажирских поездов(по месту)"],
+  //         "Время пассажирских поездов(по месту)": Number(
+  //           (Number(el["Время пассажирских поездов(по месту)"]) / 60).toFixed(4)
+  //         ),
+  //         "Количество пригородных поездов(по месту)":
+  //           el["Количество пригородных поездов(по месту)"],
+  //         "Время пригородных поездов(по месту)": Number(
+  //           (Number(el["Время пригородных поездов(по месту)"]) / 60).toFixed(4)
+  //         ),
+  //         "Количество прочих поездов(по месту)":
+  //           el["Количество прочих поездов(по месту)"],
+  //         "Время прочих поездов(по месту)": Number(
+  //           (Number(el["Время прочих поездов(по месту)"]) / 60).toFixed(4)
+  //         ),
+  //       },
+  //       { upsert: true }
+  //     );
+  //   });
+  // }
+
+  if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
+    //common report from report-gen
+    promises = req.body.map(function (el) {
+      return Violations.updateOne(
+        { "ID отказа": el["ID отказа"] },
+        [
+          {
+            $set: {
+              "ID отказа": el["ID отказа"],
+              "Категория отказа": el["Категория отказа"],
+              "Вид технологического нарушения":
+                el["Вид технологического нарушения"],
             },
           },
         ],
@@ -118,78 +250,12 @@ const addBulkOfViolations = (req, res) => {
     });
   }
 
-  // if (Object.keys(req.body[0]).includes("Ответственный")) {
-  //   // console.log("emptyReasonId in promises", emptyReasonIds);
-  //   promises = req.body.map(function (el) {
-  //     // console.log(emptyReasonIds.includes(el["#"]));
-  //     Violations.updateOne(
-  //       { "ID отказа": el["#"], "Причина 2 ур": { $ne: "" } },
-  //       {
-  //         $set: {
-  //           "Виновное предприятие": el["Ответственный"].trim(),
-  //           "Место": el["Место"].trim(),
-  //         },
-  //       },
-  //       { upsert: false }
-  //     );
-  //   });
-  // }
-
-  if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
-    promises = req.body.map(function (el) {
-      if (!el["Причина 2 ур"]) {
-        el["Причина 2 ур"] = el["???????? (???????)"];
-        // console.log(el["Причина 2 ур"]);
-      }
-      console.log(setDateTimezone(el["Начало отказа"]));
-      return Violations.replaceOne(
-        { "ID отказа": el["ID отказа"] },
-        {
-          "ID отказа": el["ID отказа"],
-          "Начало отказа": setDateTimezone(el["Начало отказа"]),
-          // "Начало отказа": el["Начало отказа"],
-          "Категория отказа": el["Категория отказа"],
-          "Вид технологического нарушения":
-            el["Вид технологического нарушения"],
-          "Виновное предприятие": el["Виновное предприятие"],
-          "Место": el["Перегон"],
-          "Причина 2 ур": el["Причина 2 ур"],
-          "Количество грузовых поездов(по месту)":
-            el["Количество грузовых поездов(по месту)"],
-          "Время грузовых поездов(по месту)": Number(
-            (Number(el["Время грузовых поездов(по месту)"]) / 60).toFixed(4)
-          ),
-          "Количество пассажирских поездов(по месту)":
-            el["Количество пассажирских поездов(по месту)"],
-          "Время пассажирских поездов(по месту)": Number(
-            (Number(el["Время пассажирских поездов(по месту)"]) / 60).toFixed(4)
-          ),
-          "Количество пригородных поездов(по месту)":
-            el["Количество пригородных поездов(по месту)"],
-          "Время пригородных поездов(по месту)": Number(
-            (Number(el["Время пригородных поездов(по месту)"]) / 60).toFixed(4)
-          ),
-          "Количество прочих поездов(по месту)":
-            el["Количество прочих поездов(по месту)"],
-          "Время прочих поездов(по месту)": Number(
-            (Number(el["Время прочих поездов(по месту)"]) / 60).toFixed(4)
-          ),
-        },
-        { upsert: true }
-      );
-    });
-  }
-
   Promise.all(promises).then((results) => {
-    // console.log("results", results);
-    // Все ответы res помещаются в массив
-    // const allResponses = results.map((result) => result.body); // предположим, что результат представлен в формате { body: результат }
     let acc0 = { ...results[0] };
     Object.keys(acc0).forEach((key) => {
       acc0[key] = 0;
     });
     // console.log("acc0", acc0);
-    // Применение функции accumulatedRes к массиву allResponses
     let accumulatedRes = results.reduce((acc, curr) => {
       for (key in curr) {
         if (curr[key] > 0) acc[key]++;
@@ -200,8 +266,6 @@ const addBulkOfViolations = (req, res) => {
       return acc;
     }, acc0);
     // console.log("accumulatedRes", accumulatedRes);
-
-    // Передача результата в теле ответа сервера в формате JSON
     res.status(201).json(accumulatedRes);
   });
 };
