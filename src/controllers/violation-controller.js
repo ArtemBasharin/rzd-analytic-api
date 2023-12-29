@@ -145,17 +145,16 @@ const addBulkOfViolations = (req, res) => {
   //   });
   // }
 
+  // console.log(req.body);
   //common report from new report
   if (Object.keys(req.body[0]).includes("Ответственный")) {
-    // console.log("emptyReasonId in promises", emptyReasonIds);
     promises = req.body.map(function (el) {
-      // console.log(emptyReasonIds.includes(el["#"]));
-      el["Начало"];
       return Violations.updateOne(
         { "ID отказа": el["#"] },
         [
           {
             $set: {
+              "ID отказа": el["#"],
               "Виновное предприятие": el["Ответственный"]
                 .trim()
                 .replace(/\n/g, " ")
