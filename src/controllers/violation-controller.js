@@ -2,14 +2,17 @@ const ObjectId = require("mongodb");
 const Violations = require("../models/violation");
 const violationID = "ID отказа";
 
-function setDateTimezone(dateString) {
-  if (dateString) {
-    console.log(new Date(dateString));
-    let index = dateString.indexOf(".");
-    let string = dateString.slice(0, index);
-    // console.log(string + "-03:00");
-    return string + "-03:00";
-  }
+function setDateTimezone(dateStr) {
+  const parts = dateStr.split(/[. :]/); // Разбиваем строку на части
+  // Индексы 2 и 1 соответствуют году и месяцу в строке "22" и "01"
+  const year = parseInt("20" + parts[2]); // Преобразуем год в числовой формат
+  const month = parseInt(parts[1]) - 1; // Месяцы в JavaScript начинаются с 0, поэтому вычитаем 1
+  const day = parseInt(parts[0]);
+  const hours = parseInt(parts[3]);
+  const minutes = parseInt(parts[4]);
+  // Создаем объект даты с учетом московского времени (+3 часа относительно UTC)
+  const date = new Date(Date.UTC(year, month, day, hours, minutes));
+  return date;
 }
 
 function getTrains(inputString) {
@@ -49,19 +52,19 @@ const getViolations = (req, res) => {
   res.setHeader("Access-Control-Max-Age", "7200");
   res.setHeader("Access-Control-Allow-Headers", "content-type");
   console.log("req.query:", req.query);
-  let minY = req.query.fromYear + "-01-01";
-  let maxY = req.query.toYear + "-12-31";
+  let minY = new Date(`${req.query.fromYear}-01-01T00:00:00.000Z`);
+  let maxY = new Date(`${req.query.toYear}-12-31T23:59:59.999Z`);
 
   Violations.find({
     $and: [
       {
-        "Начало отказа": { $gte: new Date(minY) },
+        "Начало отказа": { $gte: minY },
       },
-      { "Начало отказа": { $lte: new Date(maxY) } },
+      { "Начало отказа": { $lte: maxY } },
     ],
   })
     .then((result) => {
-      // console.log(result);
+      console.log(result);
       res.status(200).json(result);
     })
     .catch((err) => handleError(res, err));
@@ -145,7 +148,7 @@ const addBulkOfViolations = (req, res) => {
   //   });
   // }
 
-  // console.log(req.body);
+  console.log(req.body);
   //common report from new report
   if (Object.keys(req.body[0]).includes("Ответственный")) {
     promises = req.body.map(function (el) {
@@ -160,11 +163,14 @@ const addBulkOfViolations = (req, res) => {
                 .replace(/\n/g, " ")
                 .replace(/\s+/g, " "),
               // "Начало отказа": setDateTimezone(el["Начало"]),
-              "Начало отказа": new Date(el["Начало"]),
+              "Начало отказа": setDateTimezone(
+                el["Начало"].trim().replace(/\n/g, " ").replace(/\s+/g, " ")
+              ),
               "Место": el["Место"]
                 .trim()
                 .replace(/\n/g, " ")
                 .replace(/\s+/g, " "),
+              // "Категория отказа": el["Категория"], //на фронте нужно менять значение поля
               "Причина 2 ур": el["Причина"],
               "Количество грузовых поездов(по месту)": getTrains(
                 el["Грузовой"]
@@ -243,9 +249,9 @@ const addBulkOfViolations = (req, res) => {
         [
           {
             $set: {
-              "Категория отказа": el["Категория отказа"],
               "Вид технологического нарушения":
                 el["Вид технологического нарушения"],
+              "Категория отказа": el["Категория отказа"],
               "Причина": {
                 $cond: {
                   if: { $ne: ["$el['Причина 2 ур']", ""] },
