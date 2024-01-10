@@ -161,7 +161,11 @@ const addBulkOfViolations = (req, res) => {
               "Виновное предприятие": el["Ответственный"]
                 .trim()
                 .replace(/\n/g, " ")
-                .replace(/\s+/g, " "),
+                .replace(/\s+/g, " ")
+                .replace("З-СИБ,", "")
+                .replace("ООО «ЛокоТех-Сервис»", "")
+                .replace("ООО «СТМ-Сервис»", "")
+                .trim(),
               // "Начало отказа": setDateTimezone(el["Начало"]),
               "Начало отказа": setDateTimezone(
                 el["Начало"].trim().replace(/\n/g, " ").replace(/\s+/g, " ")
