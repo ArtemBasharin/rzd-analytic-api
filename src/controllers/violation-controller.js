@@ -3,14 +3,12 @@ const Violations = require("../models/violation");
 const violationID = "ID отказа";
 
 function setDateTimezone(dateStr) {
-  const parts = dateStr.split(/[. :]/); // Разбиваем строку на части
-  // Индексы 2 и 1 соответствуют году и месяцу в строке "22" и "01"
-  const year = parseInt("20" + parts[2]); // Преобразуем год в числовой формат
-  const month = parseInt(parts[1]) - 1; // Месяцы в JavaScript начинаются с 0, поэтому вычитаем 1
+  const parts = dateStr.split(/[. :]/);
+  const year = parseInt("20" + parts[2]);
+  const month = parseInt(parts[1]) - 1;
   const day = parseInt(parts[0]);
   const hours = parseInt(parts[3]);
   const minutes = parseInt(parts[4]);
-  // Создаем объект даты с учетом московского времени (+3 часа относительно UTC)
   const date = new Date(Date.UTC(year, month, day, hours, minutes));
   return date;
 }
@@ -64,7 +62,7 @@ const getViolations = (req, res) => {
     ],
   })
     .then((result) => {
-      console.log(result);
+      // console.log(result);
       res.status(200).json(result);
     })
     .catch((err) => handleError(res, err));
@@ -117,55 +115,33 @@ const addBulkOfViolations = (req, res) => {
     // })
     .catch((err) => handleError(res, err));
 
-  // let emptyReasonIds = Violations.find({
-  //   "Причина 2 ур": { $exists: false },
-  // }).then((res) => {
-  //   // console.log("res", res);
-  //   // console.log(Array.from(res.map((el) => el["ID отказа"])));
-  //   return Array.from(res.map((el) => el["ID отказа"]));
-  //   // console.log("req.body[0]", req.body[0]);
-  // });
-
   let promises = [];
 
-  //correct code
-  // if (Object.keys(req.body[0]).includes("Ответственный")) { //common report from new report
-  //   // console.log("emptyReasonId in promises", emptyReasonIds);
-  //   promises = req.body.map(function (el) {
-  //     // console.log(emptyReasonIds.includes(el["#"]));
-  //     return Violations.updateOne(
-  //       { "ID отказа": el["#"] },
-  //       [
-  //         {
-  //           $set: {
-  //             "Виновное предприятие": el["Ответственный"].trim(),
-  //             "Место": el["Место"].trim(),
-  //           },
-  //         },
-  //       ],
-  //       { upsert: false }
-  //     );
-  //   });
-  // }
-
-  console.log(req.body);
+  // console.log(req.body);
   //common report from new report
   if (Object.keys(req.body[0]).includes("Ответственный")) {
     promises = req.body.map(function (el) {
+      let unit = el["Ответственный"]
+        .trim()
+        .replace(/\n/g, " ")
+        .replace(/\s+/g, " ")
+        .replace("З-СИБ,", "")
+        .replace("ООО «ЛокоТех-Сервис»", "")
+        .replace("ООО «СТМ-Сервис»", "")
+        .trim();
+
+      //checking of string without symbols
+      if (!el["Причина"] || !el["Причина"].trim()) {
+        el["Причина"] = `Причина не указана вина ${unit}`;
+        console.log(el["Причина"]);
+      }
       return Violations.updateOne(
         { "ID отказа": el["#"] },
         [
           {
             $set: {
               "ID отказа": el["#"],
-              "Виновное предприятие": el["Ответственный"]
-                .trim()
-                .replace(/\n/g, " ")
-                .replace(/\s+/g, " ")
-                .replace("З-СИБ,", "")
-                .replace("ООО «ЛокоТех-Сервис»", "")
-                .replace("ООО «СТМ-Сервис»", "")
-                .trim(),
+              "Виновное предприятие": unit,
               // "Начало отказа": setDateTimezone(el["Начало"]),
               "Начало отказа": setDateTimezone(
                 el["Начало"].trim().replace(/\n/g, " ").replace(/\s+/g, " ")
@@ -175,7 +151,7 @@ const addBulkOfViolations = (req, res) => {
                 .replace(/\n/g, " ")
                 .replace(/\s+/g, " "),
               // "Категория отказа": el["Категория"], //на фронте нужно менять значение поля
-              "Причина 2 ур": el["Причина"],
+              "Причина 2 ур": el["Причина"].replace(/\(\d+\)/g, "").trim(),
               "Количество грузовых поездов(по месту)": getTrains(
                 el["Грузовой"]
               ),
@@ -200,51 +176,6 @@ const addBulkOfViolations = (req, res) => {
     });
   }
 
-  //old correct code
-
-  // if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
-  //   //common report from report-gen
-  //   promises = req.body.map(function (el) {
-  //     if (!el["Причина 2 ур"]) {
-  //       el["Причина 2 ур"] = el["???????? (???????)"];
-  //     }
-  //     return Violations.replaceOne(
-  //       { "ID отказа": el["ID отказа"] },
-  //       {
-  //         "ID отказа": el["ID отказа"],
-  //         "Начало отказа": setDateTimezone(el["Начало отказа"]),
-  //         "Категория отказа": el["Категория отказа"],
-  //         "Вид технологического нарушения":
-  //           el["Вид технологического нарушения"],
-  //         "Виновное предприятие": el["Виновное предприятие"],
-  //         "Место": el["Перегон"],
-  //         "Причина 2 ур": el["Причина 2 ур"],
-  //         "Количество грузовых поездов(по месту)":
-  //           el["Количество грузовых поездов(по месту)"],
-  //         "Время грузовых поездов(по месту)": Number(
-  //           (Number(el["Время грузовых поездов(по месту)"]) / 60).toFixed(4)
-  //         ),
-  //         "Количество пассажирских поездов(по месту)":
-  //           el["Количество пассажирских поездов(по месту)"],
-  //         "Время пассажирских поездов(по месту)": Number(
-  //           (Number(el["Время пассажирских поездов(по месту)"]) / 60).toFixed(4)
-  //         ),
-  //         "Количество пригородных поездов(по месту)":
-  //           el["Количество пригородных поездов(по месту)"],
-  //         "Время пригородных поездов(по месту)": Number(
-  //           (Number(el["Время пригородных поездов(по месту)"]) / 60).toFixed(4)
-  //         ),
-  //         "Количество прочих поездов(по месту)":
-  //           el["Количество прочих поездов(по месту)"],
-  //         "Время прочих поездов(по месту)": Number(
-  //           (Number(el["Время прочих поездов(по месту)"]) / 60).toFixed(4)
-  //         ),
-  //       },
-  //       { upsert: true }
-  //     );
-  //   });
-  // }
-
   if (Object.keys(req.body[0]).includes("Виновное предприятие")) {
     //common report from report-gen
     promises = req.body.map(function (el) {
@@ -256,13 +187,9 @@ const addBulkOfViolations = (req, res) => {
               "Вид технологического нарушения":
                 el["Вид технологического нарушения"],
               "Категория отказа": el["Категория отказа"],
-              "Причина": {
-                $cond: {
-                  if: { $ne: ["$el['Причина 2 ур']", ""] },
-                  then: el["Причина 2 ур"],
-                  else: "$Причина",
-                },
-              },
+              "Причина 2 ур": el["Причина 2 ур"]
+                ? el["Причина 2 ур"]
+                : "$Причина 2 ур",
             },
           },
         ],
