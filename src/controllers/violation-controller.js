@@ -9,7 +9,7 @@ function setDateTimezone(dateStr) {
   const day = parseInt(parts[0]);
   const hours = parseInt(parts[3]);
   const minutes = parseInt(parts[4]);
-  const date = new Date(Date.UTC(year, month, day, hours, minutes));
+  const date = new Date(Date.UTC(year, month, day, hours - 3, minutes));
   return date;
 }
 
@@ -62,7 +62,7 @@ const getViolations = (req, res) => {
     ],
   })
     .then((result) => {
-      // console.log(result);
+      console.log(result);
       res.status(200).json(result);
     })
     .catch((err) => handleError(res, err));
@@ -128,12 +128,13 @@ const addBulkOfViolations = (req, res) => {
         .replace("З-СИБ,", "")
         .replace("ООО «ЛокоТех-Сервис»", "")
         .replace("ООО «СТМ-Сервис»", "")
+        .replace("ПАО «Межрегиональная распределительная сетевая компания Сибири»", "ПАО МРСК Сибири")
         .trim();
 
       //checking of string without symbols
       if (!el["Причина"] || !el["Причина"].trim()) {
         el["Причина"] = `Причина не указана вина ${unit}`;
-        console.log(el["Причина"]);
+        // console.log(el["Причина"]);
       }
       return Violations.updateOne(
         { "ID отказа": el["#"] },
@@ -150,7 +151,7 @@ const addBulkOfViolations = (req, res) => {
                 .trim()
                 .replace(/\n/g, " ")
                 .replace(/\s+/g, " "),
-              // "Категория отказа": el["Категория"], //на фронте нужно менять значение поля
+              // "Категория отказа": el["Категория"], //на фронте нужно менять имя ключа
               "Причина 2 ур": el["Причина"].replace(/\(\d+\)/g, "").trim(),
               "Количество грузовых поездов(по месту)": getTrains(
                 el["Грузовой"]
