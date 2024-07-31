@@ -22,7 +22,11 @@ mongoose
 
 app.use(
   cors({
-    origin: "https://rzd-analytic-api.vercel.app/",
+    origin: [
+      "https://rzd-analytic-api.vercel.app/",
+      "http://localhost:3000/",
+      "http://localhost:3001/",
+    ],
     methods: "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS",
     preflightContinue: false,
     optionsSuccessStatus: 200,
